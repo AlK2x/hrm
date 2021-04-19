@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  title: Human resource management system
+  version: 1.0.0
+tags:
+  - name: candidate
+    description: Сервис кандидатов
+  - name: employee
+    description: Сервис сотрудников
+servers:
+  - description: Example Server
+    url: http://hrm.local.lan/v2/api
+paths:
+  /candidate/register:
+    post:
+      tags:
+        - candidate
+      summary: Регистрация нового кандидата
+      description: Регистрация нового кандидата.
+      operationId: registerCandidate
+      requestBody:
+        $ref: '#/components/requestBodies/Candidate'
+      responses:
+        '201':
+          description: Регистрация прошла успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+        '400':
+          description: Неправильный запрос
+  /candidate/offer:
+    put:
+      tags:
+        - candidate
+      summary:  Предоставить оффер кандидату.
+      description: Предоставить оффер кандидату.
+      operationId: candidateOffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                candidateId:
+                  type: string
+              required:
+                - userId
+            example:
+              candidateId: 'cff5b587-9198-41d5-9b40-7dd88d2c6bab'
+      responses:
+        '200':
+          description: Оффер успешно предоставлен
+        '400':
+          description: Неправильный запрос
+        '404':
+          description: Такого кандидата нет
+  /candidate/decline:
+    post:
+      tags:
+        - candidate
+      summary: Отклонить кандидата
+      description: Отклонить кандидатуру или кандидат отказался от оффера
+      operationId: candidateDecline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                candidateId:
+                  type: string
+              required:
+                - candidateId
+            example:
+              candidateId: 'cff5b587-9198-41d5-9b40-7dd88d2c6bab'
+      responses:
+        '200':
+          description: Кандидатура отклонена
+        '400':
+          description: Неправильный запрос
+        '404':
+          description: Такого кандидата нет
+  /candidate/hire:
+    post:
+      tags:
+        - candidate
+      summary: Перевести кандидата в сотрудники
+      description: Принять кандидата. Кандидат становиться сотрудником
+      operationId: candidateHire
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                candidateId:
+                  type: string
+              required:
+                - candidateId
+            example:
+              candidateId: 'cff5b587-9198-41d5-9b40-7dd88d2c6bab'
+      responses:
+        '200':
+          description: Нанять кандидата
+        '400':
+          description: Неправильный запрос
+        '404':
+          description: Такого кандидата нет
+  '/candidate/{candidateId}':
+    get:
+      tags:
+        - candidate
+      summary: Ресурс кандилата по ID
+      description: Вернуть данные кандидата
+      operationId: getCandidateById
+      parameters:
+        - name: candidateId
+          in: path
+          description: ID кандидата
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+        '400':
+          description: Неправильный запрос
+        '404':
+          description: Кандидат не найден
+  /candidate/list:
+    get:
+      tags:
+        - candidate
+      summary: Список всех кандидатов
+      description: Получить список всех кандидатов
+      operationId: getCandidateList
+      responses:
+        '200':
+          description: Успешное получение списка кандидатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    candiateId:
+                      type: string
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    status:
+                      type: string
+                    statusCreatedAt:
+                      type: string
+                      format: date-time
+components:
+  schemas:
+    Candidate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+      required:
+        - name
+        - email
+  requestBodies:
+    Candidate:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Candidate'
+          examples:
+            sample-candidate:
+              summary: Обычный каднидат
+              value:
+                name: johndoe589
+                email: bestjohn@doe.com
+                phone: '+71002003040'
+                address: 'ул Большая Филевская д 16 кв 19'
+
+      description: User object that needs to be created
+      required: true
