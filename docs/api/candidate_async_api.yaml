@@ -1,0 +1,21 @@
+asyncapi: 2.0.0
+info:
+  title: Candidate Service
+  version: 1.0.0
+  description: This service for candidate service
+channels:
+  candiate/hired:
+    subscribe:
+      message:
+        $ref: '#/components/messages/CandidateHired'
+components:
+  messages:
+    CandidateHired:
+      payload:
+        type: object
+        properties:
+          candidateId:
+            type: string
+          time:
+            type: string
+            format: date-time

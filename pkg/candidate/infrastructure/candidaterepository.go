@@ -1,34 +1,33 @@
 package infrastructure
 
 import (
-	"database/sql"
-	"hrm/pkg/candidate/model"
+	"hrm/pkg/candidate/domain"
 )
 
-func CreateRepository(db *sql.DB) model.CandidateRepository {
-	return &MysqlCandidateRepository{db: db}
+func CreateRepository(tx Transaction) domain.CandidateRepository {
+	return &MysqlCandidateRepository{tx: tx}
 }
 
 type MysqlCandidateRepository struct {
-	db *sql.DB
+	tx Transaction
 }
 
-func (m *MysqlCandidateRepository) GetAll() (map[string]model.Candidate, error) {
+func (m *MysqlCandidateRepository) GetAll() (map[string]domain.Candidate, error) {
 	panic("implement me")
 }
 
-func (m *MysqlCandidateRepository) GetById(id string) (*model.Candidate, error) {
+func (m *MysqlCandidateRepository) GetById(id string) (*domain.Candidate, error) {
 	panic("implement me")
 }
 
-func (m *MysqlCandidateRepository) Add(order *model.Candidate) error {
+func (m *MysqlCandidateRepository) Add(order *domain.Candidate) error {
 	panic("implement me")
 }
 
-func (m *MysqlCandidateRepository) Delete(order *model.Candidate) error {
+func (m *MysqlCandidateRepository) Delete(order *domain.Candidate) error {
 	panic("implement me")
 }
 
-func (m *MysqlCandidateRepository) Update(order *model.Candidate) error {
+func (m *MysqlCandidateRepository) Update(order *domain.Candidate) error {
 	panic("implement me")
 }

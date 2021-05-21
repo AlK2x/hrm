@@ -1,6 +1,8 @@
-package model
+package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Candidate struct {
 	Id      string
@@ -23,7 +25,7 @@ const (
 type Status struct {
 	Type      StatusEnum
 	StartedAt time.Time
-	EndAt     time.Time
+	EndAt     *time.Time
 }
 
 type CandidateRepository interface {
@@ -32,4 +34,10 @@ type CandidateRepository interface {
 	Add(order *Candidate) error
 	Delete(order *Candidate) error
 	Update(order *Candidate) error
+}
+
+type CandidateUnitOfWork interface {
+	CandidateRepository() CandidateRepository
+	MessageService() MessageService
+	Complete(error)
 }

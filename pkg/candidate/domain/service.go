@@ -1,7 +1,8 @@
-package model
+package domain
 
 import (
 	"github.com/google/uuid"
+	"hrm/pkg/candidate/service"
 	"time"
 )
 
@@ -26,7 +27,9 @@ func WithAddress(address string) CandidateOption {
 }
 
 type CandidateService struct {
-	repository CandidateRepository
+	repository     CandidateRepository
+	messageService MessageService
+	unitOfWork     service.UnitOfWork
 }
 
 func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, error) {
@@ -36,9 +39,19 @@ func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, err
 		opt(c)
 	}
 
+	err := s.validate(c)
+	if err != nil {
+		return nil, err
+	}
+
 	c.Status = Status{
 		Type:      New,
 		StartedAt: time.Time{},
+	}
+
+	err = s.repository.Add(c)
+	if err != nil {
+		return nil, err
 	}
 
 	return c, nil
@@ -65,7 +78,17 @@ func (s *CandidateService) Hire(candidateId string) error {
 	c.Status.Type = Hire
 	c.Status.StartedAt = time.Time{}
 
-	return nil
+	err = s.unitOfWork.MessageService().Send(Message{Msg: ""})
+	if err != nil {
+		return err
+	}
+
+	err = s.unitOfWork.CandidateRepository().Update(c)
+	if err != nil {
+		return err
+	}
+
+	return s.unitOfWork.Complete(err)
 }
 
 func (s *CandidateService) Decline(candidateId string) error {
@@ -77,5 +100,12 @@ func (s *CandidateService) Decline(candidateId string) error {
 	c.Status.Type = Decline
 	c.Status.StartedAt = time.Time{}
 
+	return nil
+}
+
+func (s *CandidateService) validate(c *Candidate) error {
+	if c.Name == "" {
+
+	}
 	return nil
 }

@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  candidate:
+    container_name: candidate
+    image: "aleksandrkrylov/candidate:latest"
+    ports:
+      - 8000:8000
+    environment:
+      ORDERSERVICE_SERVER_REST_ADDRESS: ":8000"
+      ORDERSERVICE_DB_DNS: "user:12345@tcp(candidate-db:3306)/candidate"
+    depends_on:
+      orderservice-db:
+        condition: service_healthy
+  orderservice-db:
+    image: "percona/percona-server:8.0"
+    container_name: candidate-db
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: "candidate"
+      MYSQL_USER: "candidate"
+      MYSQL_PASSWORD: "example"
+    healthcheck:
+      test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
+      interval: 20s
+      timeout: 1s
+    volumes:
+      - ./data/candidate:/var/lib/mysql
