@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"encoding/json"
 	"github.com/streadway/amqp"
 	"hrm/pkg/candidate/domain"
 )
@@ -17,7 +18,7 @@ type EventDispatcherConfig struct {
 	QueueName string
 }
 
-func NewReader(config EventDispatcherConfig) (domain.EventReader, error) {
+func NewReader(config EventDispatcherConfig) (domain.EventConsumer, error) {
 	return createEventDispatcher(config)
 }
 
@@ -49,9 +50,13 @@ func createEventDispatcher(c EventDispatcherConfig) (*eventDispatcher, error) {
 }
 
 func (e *eventDispatcher) Write(event domain.Event) error {
+	eventData, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
 	return e.ch.Publish("", e.queue.Name, false, false, amqp.Publishing{
 		ContentType: "text/plain",
-		Body:        []byte(event.Message),
+		Body:        eventData,
 	})
 }
 
@@ -64,9 +69,22 @@ func (e *eventDispatcher) Read() (<-chan domain.Event, error) {
 
 	go func() {
 		for msg := range msgs {
-			ch <- domain.Event{Message: string(msg.Body)}
+			var e domain.CandidateHired
+			err = json.Unmarshal(msg.Body, &e)
+			if err != nil {
+				continue
+			}
+			ch <- e
 		}
 	}()
 
 	return ch, nil
+}
+
+type dbMessageService struct {
+	tx Transaction
+}
+
+func (d *dbMessageService) Send(msg domain.Message) error {
+	return nil
 }

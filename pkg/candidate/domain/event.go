@@ -1,17 +1,30 @@
 package domain
 
-type Event struct {
-	Message string
+import "time"
+
+type EventType string
+
+const (
+	CandidateHiredEventType = EventType("candidate_hired")
+)
+
+type Event interface {
+	GetType() EventType
 }
 
 type CandidateHired struct {
-	Event
+	Id   string
+	Date time.Time
+}
+
+func (c CandidateHired) GetType() EventType {
+	return CandidateHiredEventType
 }
 
 type EventWriter interface {
 	Write(Event) error
 }
 
-type EventReader interface {
+type EventConsumer interface {
 	Read() (<-chan Event, error)
 }

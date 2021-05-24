@@ -1,14 +1,17 @@
 package transport
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
 	"hrm/pkg/candidate/domain"
+	"io/ioutil"
 	"net/http"
 )
 
 type Handler struct {
-	candidateService domain.CandidateService
+	candidateService    domain.CandidateService
+	candidateRepository domain.CandidateRepository
 }
 
 func NewHandler(s domain.CandidateService) *Handler {
@@ -55,7 +58,41 @@ func NewRouter(s *Handler) http.Handler {
 }
 
 func (s *Handler) RegisterCandidate(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	defer r.Body.Close()
+
+	var createCandidateRequestData createCandidateRequest
+	err = json.Unmarshal(b, &createCandidateRequestData)
+	if err != nil {
+		return err
+	}
+
+	registerOptions := []domain.CandidateOption{
+		domain.WithName(createCandidateRequestData.Name),
+		domain.WithEmail(createCandidateRequestData.Email),
+		domain.WithPhone(createCandidateRequestData.Phone),
+		domain.WithAddress(createCandidateRequestData.Address),
+	}
+
+	c, err := s.candidateService.Register(registerOptions...)
+	if err != nil {
+		return err
+	}
+
+	err = jsonResponse(w, candidateResponse{
+		Id:      c.Id,
+		Name:    c.Name,
+		Email:   c.Email,
+		Phone:   c.Phone,
+		Address: c.Address,
+		Status:  int(c.Status.Type),
+	})
+
+	return err
 }
 
 func (s *Handler) MakeOffer(w http.ResponseWriter, r *http.Request) error {
@@ -71,7 +108,28 @@ func (s *Handler) DeclineCandidate(w http.ResponseWriter, r *http.Request) error
 }
 
 func (s *Handler) GetCandidate(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	candidateId, ok := mux.Vars(r)["candidateId"]
+	if !ok {
+		badRequestResponse(w, "OrderId not found")
+		return nil
+	}
+
+	c, err := s.candidateRepository.GetById(candidateId)
+	if err != nil {
+		return err
+	}
+	if c == nil {
+		return jsonResponse(w, nil)
+	}
+
+	return jsonResponse(w, candidateResponse{
+		Id:      c.Id,
+		Name:    c.Name,
+		Email:   c.Email,
+		Phone:   c.Phone,
+		Address: c.Address,
+		Status:  int(c.Status.Type),
+	})
 }
 
 func (s *Handler) GetCandidateList(w http.ResponseWriter, r *http.Request) error {
@@ -90,4 +148,22 @@ func createHandlerFunc(f func(w http.ResponseWriter, r *http.Request) error) htt
 			}
 		}
 	}
+}
+
+func jsonResponse(w http.ResponseWriter, r interface{}) error {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8\"")
+	resp, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(resp)
+	return err
+}
+
+func badRequestResponse(w http.ResponseWriter, err string) {
+	http.Error(w, err, http.StatusBadRequest)
+}
+
+func errorResponse(w http.ResponseWriter, err string) {
+	http.Error(w, err, http.StatusInternalServerError)
 }

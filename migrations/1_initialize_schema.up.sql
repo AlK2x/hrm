@@ -15,3 +15,11 @@ CREATE TABLE status (
     PRIMARY KEY(id),
     CONSTRAINT FK_candidate_status FOREIGN KEY (candidate_id) REFERENCES candidate(id) ON UPDATE CASCADE, NO DELETE CASCADE
 );
+
+CREATE TABLE domain_event (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    event JSON,
+    status TINYINT NOT NULL,
+    PRIMARY KEY(id),
+    INDEX status(status)
+);

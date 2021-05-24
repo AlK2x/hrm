@@ -13,6 +13,10 @@ type unitOfWork struct {
 	tx Transaction
 }
 
+func (u *unitOfWork) MessageService() domain.MessageService {
+	return &dbMessageService{tx: u.tx}
+}
+
 func (u *unitOfWork) CandidateRepository() domain.CandidateRepository {
 	return CreateRepository(u.tx)
 }

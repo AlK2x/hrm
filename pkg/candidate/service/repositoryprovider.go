@@ -9,5 +9,5 @@ type RepositoryProvider interface {
 
 type UnitOfWork interface {
 	RepositoryProvider
-	Complete(e error) error
+	Complete(e *error)
 }

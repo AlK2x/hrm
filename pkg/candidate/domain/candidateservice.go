@@ -26,10 +26,14 @@ func WithAddress(address string) CandidateOption {
 	}
 }
 
+func WithEmail(email string) CandidateOption {
+	return func(c *Candidate) {
+		c.Email = email
+	}
+}
+
 type CandidateService struct {
-	repository     CandidateRepository
-	messageService MessageService
-	unitOfWork     service.UnitOfWork
+	unitOfWorkFactory service.UnitOfWorkFactory
 }
 
 func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, error) {
@@ -49,16 +53,25 @@ func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, err
 		StartedAt: time.Time{},
 	}
 
-	err = s.repository.Add(c)
+	unit, err := s.unitOfWorkFactory.NewUnitOfWork()
 	if err != nil {
 		return nil, err
 	}
-
-	return c, nil
+	err = unit.CandidateRepository().Add(c)
+	if err != nil {
+		return nil, err
+	}
+	unit.Complete(&err)
+	return c, err
 }
 
 func (s *CandidateService) MakeOffer(candidateId string) error {
-	c, err := s.repository.GetById(candidateId)
+	unit, err := s.unitOfWorkFactory.NewUnitOfWork()
+	if err != nil {
+		return err
+	}
+	repo := unit.CandidateRepository()
+	c, err := repo.GetById(candidateId)
 	if err != nil {
 		return err
 	}
@@ -66,11 +79,18 @@ func (s *CandidateService) MakeOffer(candidateId string) error {
 	c.Status.Type = Offer
 	c.Status.StartedAt = time.Time{}
 
-	return nil
+	err = repo.Update(c)
+	unit.Complete(&err)
+	return err
 }
 
 func (s *CandidateService) Hire(candidateId string) error {
-	c, err := s.repository.GetById(candidateId)
+	unit, err := s.unitOfWorkFactory.NewUnitOfWork()
+	if err != nil {
+		return err
+	}
+	candidateRepo := unit.CandidateRepository()
+	c, err := candidateRepo.GetById(candidateId)
 	if err != nil {
 		return err
 	}
@@ -78,29 +98,37 @@ func (s *CandidateService) Hire(candidateId string) error {
 	c.Status.Type = Hire
 	c.Status.StartedAt = time.Time{}
 
-	err = s.unitOfWork.MessageService().Send(Message{Msg: ""})
+	messageService := unit.MessageService()
+	err = messageService.Send(Message{Msg: ""})
 	if err != nil {
 		return err
 	}
 
-	err = s.unitOfWork.CandidateRepository().Update(c)
+	err = candidateRepo.Update(c)
 	if err != nil {
 		return err
 	}
 
-	return s.unitOfWork.Complete(err)
+	unit.Complete(&err)
+	return err
 }
 
 func (s *CandidateService) Decline(candidateId string) error {
-	c, err := s.repository.GetById(candidateId)
+	unit, err := s.unitOfWorkFactory.NewUnitOfWork()
+	if err != nil {
+		return err
+	}
+	repo := unit.CandidateRepository()
+	c, err := repo.GetById(candidateId)
 	if err != nil {
 		return err
 	}
 
 	c.Status.Type = Decline
 	c.Status.StartedAt = time.Time{}
-
-	return nil
+	err = repo.Update(c)
+	unit.Complete(&err)
+	return err
 }
 
 func (s *CandidateService) validate(c *Candidate) error {
