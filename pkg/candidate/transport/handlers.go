@@ -96,15 +96,33 @@ func (s *Handler) RegisterCandidate(w http.ResponseWriter, r *http.Request) erro
 }
 
 func (s *Handler) MakeOffer(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	candidateId, ok := mux.Vars(r)["candidateId"]
+	if !ok {
+		badRequestResponse(w, "OrderId not found")
+		return nil
+	}
+
+	return s.candidateService.MakeOffer(candidateId)
 }
 
 func (s *Handler) HireCandidate(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	candidateId, ok := mux.Vars(r)["candidateId"]
+	if !ok {
+		badRequestResponse(w, "OrderId not found")
+		return nil
+	}
+
+	return s.candidateService.Hire(candidateId)
 }
 
 func (s *Handler) DeclineCandidate(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	candidateId, ok := mux.Vars(r)["candidateId"]
+	if !ok {
+		badRequestResponse(w, "OrderId not found")
+		return nil
+	}
+
+	return s.candidateService.Decline(candidateId)
 }
 
 func (s *Handler) GetCandidate(w http.ResponseWriter, r *http.Request) error {
@@ -119,7 +137,8 @@ func (s *Handler) GetCandidate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if c == nil {
-		return jsonResponse(w, nil)
+		notFoundResponse(w, "")
+		return nil
 	}
 
 	return jsonResponse(w, candidateResponse{
@@ -133,7 +152,24 @@ func (s *Handler) GetCandidate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Handler) GetCandidateList(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	candidates, err := s.candidateRepository.GetAll()
+	if err != nil {
+		return err
+	}
+
+	var response candidateList
+	for _, c := range candidates {
+		response.candidateResponse = append(response.candidateResponse, candidateResponse{
+			Id:      c.Id,
+			Name:    c.Name,
+			Email:   c.Email,
+			Phone:   c.Phone,
+			Address: c.Address,
+			Status:  int(c.Status.Type),
+		})
+	}
+
+	return jsonResponse(w, response)
 }
 
 func createHandlerFunc(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
@@ -164,6 +200,6 @@ func badRequestResponse(w http.ResponseWriter, err string) {
 	http.Error(w, err, http.StatusBadRequest)
 }
 
-func errorResponse(w http.ResponseWriter, err string) {
-	http.Error(w, err, http.StatusInternalServerError)
+func notFoundResponse(w http.ResponseWriter, err string) {
+	http.Error(w, err, http.StatusNotFound)
 }

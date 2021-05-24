@@ -39,5 +39,5 @@ type CandidateRepository interface {
 type CandidateUnitOfWork interface {
 	CandidateRepository() CandidateRepository
 	MessageService() MessageService
-	Complete(error)
+	Complete(*error)
 }

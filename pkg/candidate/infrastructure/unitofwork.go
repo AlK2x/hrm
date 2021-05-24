@@ -21,11 +21,12 @@ func (u *unitOfWork) CandidateRepository() domain.CandidateRepository {
 	return CreateRepository(u.tx)
 }
 
-func (u *unitOfWork) Complete(err error) {
-
+func (u *unitOfWork) Complete(err *error) {
+	err2 := u.tx.Commit()
+	err = &err2
 }
 
-func (u *unitOfWorkFactory) NewUnitOfWork() (*unitOfWork, error) {
+func (u *unitOfWorkFactory) NewUnitOfWork() (domain.CandidateUnitOfWork, error) {
 	tx, err := u.client.Begin()
 	if err != nil {
 		return nil, err
