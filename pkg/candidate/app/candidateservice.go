@@ -1,43 +1,43 @@
-package domain
+package app
 
 import (
 	"github.com/google/uuid"
-	"hrm/pkg/candidate/service"
+	"hrm/pkg/candidate/domain"
 	"time"
 )
 
-type CandidateOption func(*Candidate)
+type CandidateOption func(*domain.Candidate)
 
 func WithName(name string) CandidateOption {
-	return func(c *Candidate) {
+	return func(c *domain.Candidate) {
 		c.Name = name
 	}
 }
 
 func WithPhone(phone string) CandidateOption {
-	return func(c *Candidate) {
+	return func(c *domain.Candidate) {
 		c.Phone = phone
 	}
 }
 
 func WithAddress(address string) CandidateOption {
-	return func(c *Candidate) {
+	return func(c *domain.Candidate) {
 		c.Address = address
 	}
 }
 
 func WithEmail(email string) CandidateOption {
-	return func(c *Candidate) {
+	return func(c *domain.Candidate) {
 		c.Email = email
 	}
 }
 
 type CandidateService struct {
-	unitOfWorkFactory service.UnitOfWorkFactory
+	unitOfWorkFactory domain.UnitOfWorkFactory
 }
 
-func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, error) {
-	c := &Candidate{Id: uuid.New().String()}
+func (s *CandidateService) Register(options ...CandidateOption) (*domain.Candidate, error) {
+	c := &domain.Candidate{Id: uuid.New().String()}
 
 	for _, opt := range options {
 		opt(c)
@@ -48,8 +48,8 @@ func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, err
 		return nil, err
 	}
 
-	c.Status = Status{
-		Type:      New,
+	c.Status = domain.Status{
+		Type:      domain.New,
 		StartedAt: time.Time{},
 	}
 
@@ -57,11 +57,11 @@ func (s *CandidateService) Register(options ...CandidateOption) (*Candidate, err
 	if err != nil {
 		return nil, err
 	}
-	err = unit.CandidateRepository().Add(c)
+	err = unit.CandidateRepository().Update(c)
 	if err != nil {
 		return nil, err
 	}
-	unit.Complete(&err)
+	defer unit.Complete(&err)
 	return c, err
 }
 
@@ -76,11 +76,13 @@ func (s *CandidateService) MakeOffer(candidateId string) error {
 		return err
 	}
 
-	c.Status.Type = Offer
+	c.Status.Type = domain.Offer
 	c.Status.StartedAt = time.Time{}
 
-	err = repo.Update(c)
-	unit.Complete(&err)
+	err = repo.Update(&c)
+
+	defer unit.Complete(&err)
+
 	return err
 }
 
@@ -95,21 +97,21 @@ func (s *CandidateService) Hire(candidateId string) error {
 		return err
 	}
 
-	c.Status.Type = Hire
+	c.Status.Type = domain.Hire
 	c.Status.StartedAt = time.Time{}
 
-	messageService := unit.MessageService()
-	err = messageService.Send(Message{Msg: ""})
+	messageService := unit.MessageRepository()
+	err = messageService.Save(domain.Message{Msg: ""})
 	if err != nil {
 		return err
 	}
 
-	err = candidateRepo.Update(c)
+	err = candidateRepo.Update(&c)
 	if err != nil {
 		return err
 	}
 
-	unit.Complete(&err)
+	defer unit.Complete(&err)
 	return err
 }
 
@@ -124,14 +126,14 @@ func (s *CandidateService) Decline(candidateId string) error {
 		return err
 	}
 
-	c.Status.Type = Decline
+	c.Status.Type = domain.Decline
 	c.Status.StartedAt = time.Time{}
-	err = repo.Update(c)
-	unit.Complete(&err)
+	err = repo.Update(&c)
+	defer unit.Complete(&err)
 	return err
 }
 
-func (s *CandidateService) validate(c *Candidate) error {
+func (s *CandidateService) validate(c *domain.Candidate) error {
 	if c.Name == "" {
 
 	}

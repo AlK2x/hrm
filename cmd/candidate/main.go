@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"hrm/pkg/candidate/domain"
+	"hrm/pkg/candidate/app"
 	"hrm/pkg/candidate/transport"
 	"net/http"
 	"os"
@@ -59,7 +59,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler := transport.NewHandler(domain.CandidateService{})
+	handler := transport.NewHandler(app.CandidateService{})
 	router := transport.NewRouter(handler)
 	server := &http.Server{
 		Handler:      router,

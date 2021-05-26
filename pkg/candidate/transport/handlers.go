@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
+	"hrm/pkg/candidate/app"
 	"hrm/pkg/candidate/domain"
 	"io/ioutil"
 	"net/http"
 )
 
 type Handler struct {
-	candidateService    domain.CandidateService
+	candidateService    app.CandidateService
 	candidateRepository domain.CandidateRepository
 }
 
-func NewHandler(s domain.CandidateService) *Handler {
+func NewHandler(s app.CandidateService) *Handler {
 	return &Handler{
 		candidateService: s,
 	}
@@ -71,11 +72,11 @@ func (s *Handler) RegisterCandidate(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	registerOptions := []domain.CandidateOption{
-		domain.WithName(createCandidateRequestData.Name),
-		domain.WithEmail(createCandidateRequestData.Email),
-		domain.WithPhone(createCandidateRequestData.Phone),
-		domain.WithAddress(createCandidateRequestData.Address),
+	registerOptions := []app.CandidateOption{
+		app.WithName(createCandidateRequestData.Name),
+		app.WithEmail(createCandidateRequestData.Email),
+		app.WithPhone(createCandidateRequestData.Phone),
+		app.WithAddress(createCandidateRequestData.Address),
 	}
 
 	c, err := s.candidateService.Register(registerOptions...)
@@ -135,10 +136,6 @@ func (s *Handler) GetCandidate(w http.ResponseWriter, r *http.Request) error {
 	c, err := s.candidateRepository.GetById(candidateId)
 	if err != nil {
 		return err
-	}
-	if c == nil {
-		notFoundResponse(w, "")
-		return nil
 	}
 
 	return jsonResponse(w, candidateResponse{

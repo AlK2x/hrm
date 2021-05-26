@@ -4,6 +4,6 @@ type Message struct {
 	Msg string
 }
 
-type MessageService interface {
-	Send(msg Message) error
+type MessageRepository interface {
+	Save(msg Message) error
 }

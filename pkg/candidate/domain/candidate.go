@@ -30,14 +30,8 @@ type Status struct {
 
 type CandidateRepository interface {
 	GetAll() (map[string]Candidate, error)
-	GetById(id string) (*Candidate, error)
-	Add(order *Candidate) error
+	GetById(id string) (Candidate, error)
+	Store(order *Candidate) error
 	Delete(order *Candidate) error
 	Update(order *Candidate) error
-}
-
-type CandidateUnitOfWork interface {
-	CandidateRepository() CandidateRepository
-	MessageService() MessageService
-	Complete(*error)
 }

@@ -13,12 +13,16 @@ type Event interface {
 }
 
 type CandidateHired struct {
-	Id   string
-	Date time.Time
+	CandidateId string
+	Date        time.Time
 }
 
 func (c CandidateHired) GetType() EventType {
 	return CandidateHiredEventType
+}
+
+type EventDispatcher interface {
+	Dispatch(Event) error
 }
 
 type EventWriter interface {

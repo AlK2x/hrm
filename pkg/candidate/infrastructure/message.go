@@ -81,10 +81,10 @@ func (e *eventDispatcher) Read() (<-chan domain.Event, error) {
 	return ch, nil
 }
 
-type dbMessageService struct {
+type mysqlMessageRepository struct {
 	tx Transaction
 }
 
-func (d *dbMessageService) Send(msg domain.Message) error {
+func (d *mysqlMessageRepository) Save(msg domain.Message) error {
 	return nil
 }
