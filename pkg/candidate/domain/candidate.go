@@ -31,7 +31,6 @@ type Status struct {
 type CandidateRepository interface {
 	GetAll() (map[string]Candidate, error)
 	GetById(id string) (Candidate, error)
-	Store(order *Candidate) error
 	Delete(order *Candidate) error
-	Update(order *Candidate) error
+	Store(order *Candidate) error
 }

@@ -21,6 +21,10 @@ func (c CandidateHired) GetType() EventType {
 	return CandidateHiredEventType
 }
 
+type EventDispatcherFactory interface {
+	Create(mr MessageRepository) EventDispatcher
+}
+
 type EventDispatcher interface {
 	Dispatch(Event) error
 }

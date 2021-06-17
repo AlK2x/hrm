@@ -6,11 +6,11 @@ import (
 )
 
 type unitOfWorkFactory struct {
-	client sql.DB
+	client *sql.DB
 }
 
 type unitOfWork struct {
-	tx Transaction
+	tx *sql.Tx
 }
 
 func (u *unitOfWork) MessageRepository() domain.MessageRepository {
@@ -18,12 +18,13 @@ func (u *unitOfWork) MessageRepository() domain.MessageRepository {
 }
 
 func (u *unitOfWork) CandidateRepository() domain.CandidateRepository {
-	return CreateRepository(u.tx)
+	return &MysqlCandidateRepository{tx: u.tx}
 }
 
 func (u *unitOfWork) Complete(err *error) {
 	if err != nil {
-		u.tx.Rollback()
+		err2 := u.tx.Rollback()
+		err = &err2
 	} else {
 		err2 := u.tx.Commit()
 		err = &err2

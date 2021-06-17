@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/google/uuid"
 	"hrm/pkg/candidate/domain"
+	"net/mail"
 	"time"
 )
 
@@ -33,7 +34,8 @@ func WithEmail(email string) CandidateOption {
 }
 
 type CandidateService struct {
-	unitOfWorkFactory domain.UnitOfWorkFactory
+	unitOfWorkFactory      domain.UnitOfWorkFactory
+	eventDispatcherFactory domain.EventDispatcherFactory
 }
 
 func (s *CandidateService) Register(options ...CandidateOption) (*domain.Candidate, error) {
@@ -57,11 +59,12 @@ func (s *CandidateService) Register(options ...CandidateOption) (*domain.Candida
 	if err != nil {
 		return nil, err
 	}
-	err = unit.CandidateRepository().Update(c)
+	defer unit.Complete(&err)
+	err = unit.CandidateRepository().Store(c)
 	if err != nil {
 		return nil, err
 	}
-	defer unit.Complete(&err)
+
 	return c, err
 }
 
@@ -79,7 +82,7 @@ func (s *CandidateService) MakeOffer(candidateId string) error {
 	c.Status.Type = domain.Offer
 	c.Status.StartedAt = time.Time{}
 
-	err = repo.Update(&c)
+	err = repo.Store(&c)
 
 	defer unit.Complete(&err)
 
@@ -91,6 +94,8 @@ func (s *CandidateService) Hire(candidateId string) error {
 	if err != nil {
 		return err
 	}
+	defer unit.Complete(&err)
+
 	candidateRepo := unit.CandidateRepository()
 	c, err := candidateRepo.GetById(candidateId)
 	if err != nil {
@@ -100,18 +105,21 @@ func (s *CandidateService) Hire(candidateId string) error {
 	c.Status.Type = domain.Hire
 	c.Status.StartedAt = time.Time{}
 
-	messageService := unit.MessageRepository()
-	err = messageService.Save(domain.Message{Msg: ""})
+	err = candidateRepo.Store(&c)
 	if err != nil {
 		return err
 	}
 
-	err = candidateRepo.Update(&c)
+	ed := s.eventDispatcherFactory.Create(unit.MessageRepository())
+	err = ed.Dispatch(domain.CandidateHired{
+		CandidateId: c.Id,
+		Date:        c.Status.StartedAt,
+	})
+
 	if err != nil {
 		return err
 	}
 
-	defer unit.Complete(&err)
 	return err
 }
 
@@ -120,6 +128,7 @@ func (s *CandidateService) Decline(candidateId string) error {
 	if err != nil {
 		return err
 	}
+	defer unit.Complete(&err)
 	repo := unit.CandidateRepository()
 	c, err := repo.GetById(candidateId)
 	if err != nil {
@@ -128,14 +137,15 @@ func (s *CandidateService) Decline(candidateId string) error {
 
 	c.Status.Type = domain.Decline
 	c.Status.StartedAt = time.Time{}
-	err = repo.Update(&c)
-	defer unit.Complete(&err)
+	err = repo.Store(&c)
+
 	return err
 }
 
 func (s *CandidateService) validate(c *domain.Candidate) error {
-	if c.Name == "" {
-
+	_, err := mail.ParseAddress(c.Email)
+	if err != nil {
+		return domain.InvalidEmail
 	}
-	return nil
+	return err
 }

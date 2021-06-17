@@ -20,6 +20,7 @@ CREATE TABLE domain_event (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     event JSON,
     status TINYINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(id),
     INDEX status(status)
 );

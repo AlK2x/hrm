@@ -7,13 +7,24 @@ services:
       - 8000:8000
     environment:
       ORDERSERVICE_SERVER_REST_ADDRESS: ":8000"
-      ORDERSERVICE_DB_DNS: "user:12345@tcp(candidate-db:3306)/candidate"
+      ORDERSERVICE_DB_DNS: "user:12345@tcp(hrm-db:3306)/candidate"
     depends_on:
       orderservice-db:
         condition: service_healthy
-  orderservice-db:
+  employee:
+    container_name: employee
+    image: "aleksandrkrylov/employee:latest"
+    ports:
+      - 8001:8001
+    environment:
+      ORDERSERVICE_SERVER_REST_ADDRESS: ":8001"
+      ORDERSERVICE_DB_DNS: "user:12345@tcp(hrm-db:3306)/employee"
+    depends_on:
+      hrm-db:
+        condition: service_healthy
+  hrm-db:
     image: "percona/percona-server:8.0"
-    container_name: candidate-db
+    container_name: hrm-db
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: "candidate"

@@ -1,9 +1,16 @@
 package infrastructure
 
 import (
+	"database/sql"
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"hrm/pkg/candidate/domain"
+)
+
+type DomainEventStatus int
+
+const (
+	New DomainEventStatus = iota
 )
 
 type eventDispatcher struct {
@@ -82,9 +89,11 @@ func (e *eventDispatcher) Read() (<-chan domain.Event, error) {
 }
 
 type mysqlMessageRepository struct {
-	tx Transaction
+	tx *sql.Tx
 }
 
 func (d *mysqlMessageRepository) Save(msg domain.Message) error {
-	return nil
+	query := `INSERT INTO  domain_event (event, status) VALUES(?, ?)`
+	_, err := d.tx.Exec(query, msg.Msg, New)
+	return err
 }

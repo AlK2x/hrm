@@ -16,3 +16,10 @@ func (d *dbEventDispatcher) Dispatch(event domain.Event) error {
 	}
 	return d.repo.Save(domain.Message{Msg: string(serialized)})
 }
+
+type dbEventDispatcherFactory struct {
+}
+
+func (d dbEventDispatcherFactory) Create(mr domain.MessageRepository) domain.EventDispatcher {
+	return &dbEventDispatcher{repo: mr}
+}

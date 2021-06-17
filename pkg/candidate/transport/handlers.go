@@ -174,8 +174,16 @@ func createHandlerFunc(f func(w http.ResponseWriter, r *http.Request) error) htt
 		err := f(w, r)
 		if err != nil {
 			var e *responseError
+			var de *domain.Error
 			if errors.As(err, e) {
 				http.Error(w, e.Msg, e.Status)
+			} else if errors.As(err, de) {
+				switch {
+				case domain.EmailIsInvalid == de.Type:
+					http.Error(w, de.Msg, http.StatusBadRequest)
+				case domain.CandidateDoesNotExists == de.Type:
+					http.Error(w, de.Msg, http.StatusNotFound)
+				}
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
@@ -195,8 +203,4 @@ func jsonResponse(w http.ResponseWriter, r interface{}) error {
 
 func badRequestResponse(w http.ResponseWriter, err string) {
 	http.Error(w, err, http.StatusBadRequest)
-}
-
-func notFoundResponse(w http.ResponseWriter, err string) {
-	http.Error(w, err, http.StatusNotFound)
 }
